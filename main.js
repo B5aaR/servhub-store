@@ -11,6 +11,7 @@ function createWindow() {
         autoHideMenuBar: true,
         backgroundColor: '#08080f',
         webPreferences: { nodeIntegration: true, contextIsolation: false },
+        icon: path.join(__dirname, 'icon.png'),
     });
     win.loadFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
 }

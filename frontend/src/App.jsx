@@ -107,13 +107,7 @@ export default function App() {
         <div className="layout">
         <aside className="sidebar">
         <div className="sidebar-logo">
-        <div className="logo-mark">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="16 16 12 12 8 16"/>
-        <line x1="12" y1="12" x2="12" y2="21"/>
-        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-        </svg>
-        </div>
+        <img src="/icon.png" width="36" height="36" style={{ borderRadius: 10 }} alt="ServHub" />
         <div className="logo-text">Serv<span>Hub</span></div>
         </div>
 

@@ -10,6 +10,7 @@
   "build": {
     "appId": "net.servexa.servhub",
     "productName": "ServHub",
+    "icon": "icon.png",
     "files": [
       "main.js",
       "frontend/dist/**/*",

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchApps, searchApps, getInstalledApps, startInstall, startUninstall, onInstallLog, onInstallDone, onUninstallDone, removeListeners } from './services/api';
+import { fetchApps, searchApps, getInstalledApps, checkUpdates, startUpdate, startInstall, startUninstall, onInstallLog, onInstallDone, onUninstallDone, removeListeners } from './services/api';
 import AppGrid from './components/AppGrid';
 import SearchBar from './components/SearchBar';
 import InstallDrawer from './components/InstallDrawer';
+import AppDetail from './components/AppDetail';
 import logo from '../public/icon.png';
 
 const NAV = [
@@ -13,6 +14,7 @@ const NAV = [
     ]},
 { label: 'Library', items: [
     { id: 'library',     label: 'Installed Apps', isLibrary: true,      icon: LibraryIcon },
+    { id: 'updates',     label: 'Updates',        isUpdates: true,      icon: UpdateIcon },
 ]},
 { label: 'Categories', items: [
     { id: 'all',         label: 'All Apps',      category: '',           icon: GridIcon },
@@ -33,22 +35,26 @@ const ALL = NAV.flatMap(s => s.items);
 const PAGE_SIZE = 50;
 
 export default function App() {
-    const [apps, setApps]           = useState([]);
-    const [loading, setLoading]     = useState(true);
+    const [apps, setApps]               = useState([]);
+    const [loading, setLoading]         = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [query, setQuery]         = useState('');
-    const [activeId, setActiveId]   = useState('all');
-    const [total, setTotal]         = useState(0);
-    const [page, setPage]           = useState(1);
-    const [libCount, setLibCount]   = useState(0);
-    const [queue, setQueue]         = useState({});
-    const [drawer, setDrawer]       = useState(false);
+    const [query, setQuery]             = useState('');
+    const [activeId, setActiveId]       = useState('all');
+    const [total, setTotal]             = useState(0);
+    const [page, setPage]               = useState(1);
+    const [libCount, setLibCount]       = useState(0);
+    const [updates, setUpdates]         = useState([]);
+    const [queue, setQueue]             = useState({});
+    const [drawer, setDrawer]           = useState(false);
+    const [detail, setDetail]           = useState(null);
+    const [installedSet, setInstalledSet] = useState(new Set());
     const timer = useRef(null);
 
-    const active  = ALL.find(i => i.id === activeId) || ALL[2];
-    const isLib   = !!active.isLibrary;
-    const qActive = Object.values(queue).filter(e => e.status === 'installing' || e.status === 'uninstalling').length;
-    const hasMore = !isLib && !query && !active.section && apps.length < total;
+    const active    = ALL.find(i => i.id === activeId) || ALL[2];
+    const isLib     = !!active.isLibrary;
+    const isUpdates = !!active.isUpdates;
+    const qActive   = Object.values(queue).filter(e => e.status === 'installing' || e.status === 'uninstalling').length;
+    const hasMore   = !isLib && !isUpdates && !query && !active.section && apps.length < total;
 
     useEffect(() => {
         onInstallLog(({ appId, line }) =>
@@ -56,22 +62,43 @@ export default function App() {
         );
         onInstallDone(({ appId, success, message }) => {
             setQueue(q => ({ ...q, [appId]: { ...q[appId], status: success ? 'done' : 'error', message } }));
-            if (success) setLibCount(c => c + 1);
+            if (success) { setLibCount(c => c + 1); setInstalledSet(s => new Set([...s, appId])); }
         });
-            onUninstallDone(({ appId, success }) => {
-                setQueue(q => { const n = { ...q }; delete n[appId]; return n; });
-                if (success) {
-                    setApps(p => p.filter(a => (a.app_id || a.id) !== appId));
-                    setLibCount(c => Math.max(0, c - 1));
-                }
-            });
-            return removeListeners;
+        onUninstallDone(({ appId, success }) => {
+            setQueue(q => { const n = { ...q }; delete n[appId]; return n; });
+            if (success) {
+                setApps(p => p.filter(a => (a.app_id || a.id) !== appId));
+                setLibCount(c => Math.max(0, c - 1));
+                setInstalledSet(s => { const n = new Set(s); n.delete(appId); return n; });
+                setUpdates(u => u.filter(a => (a.app_id || a.id) !== appId));
+            }
+        });
+        return removeListeners;
     }, []);
 
     const install   = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } })); setDrawer(true); startInstall(appId, name); }, []);
     const uninstall = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'uninstalling', logs: [] } })); setDrawer(true); startUninstall(appId, name); }, []);
+    const update    = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } })); setDrawer(true); startUpdate(appId, name); }, []);
 
-    const loadNav = useCallback(async item => {
+    const loadPage = useCallback(async (item, pageNum, currentApps) => {
+        const data = await fetchApps({
+            category: item.category ?? '',
+            section:  item.section  ?? '',
+            hitsPerPage: PAGE_SIZE,
+            page: pageNum,
+        });
+        const list = Array.isArray(data) ? data : (data.hits || []);
+        if (pageNum === 1) {
+            setApps(list);
+        } else {
+            setApps(prev => [...prev, ...list]);
+        }
+        setPage(pageNum);
+        setTotal(data.estimatedTotalHits ?? list.length);
+        return list;
+    }, []);
+
+    const loadNav = useCallback(async (item) => {
         setLoading(true);
         setApps([]);
         setPage(1);
@@ -84,31 +111,30 @@ export default function App() {
                 setLibCount(marked.length);
                 return;
             }
-            const data = await fetchApps({ category: item.category ?? '', section: item.section ?? '', hitsPerPage: PAGE_SIZE, page: 1 });
-            const list = Array.isArray(data) ? data : (data.hits || []);
-            setApps(list);
-            setTotal(data.estimatedTotalHits ?? list.length);
+            if (item.isUpdates) {
+                const list = await checkUpdates();
+                setUpdates(list);
+                setApps(list.map(a => ({ ...a, installed: true })));
+                setTotal(list.length);
+                return;
+            }
+            await loadPage(item, 1);
         } catch { setApps([]); }
         finally { setLoading(false); }
-    }, []);
+    }, [loadPage]);
 
     const loadMore = useCallback(async () => {
         if (loadingMore || !hasMore) return;
-        const nextPage = page + 1;
         setLoadingMore(true);
-        try {
-            const data = await fetchApps({ category: active.category ?? '', section: active.section ?? '', hitsPerPage: PAGE_SIZE, page: nextPage });
-            const list = Array.isArray(data) ? data : (data.hits || []);
-            setApps(prev => [...prev, ...list]);
-            setPage(nextPage);
-            setTotal(data.estimatedTotalHits ?? (apps.length + list.length));
-        } catch {}
+        try { await loadPage(active, page + 1); }
+        catch {}
         finally { setLoadingMore(false); }
-    }, [loadingMore, hasMore, page, active, apps.length]);
+    }, [loadingMore, hasMore, page, active, loadPage]);
 
     useEffect(() => {
         loadNav(active);
         getInstalledApps().then(l => setLibCount(l.length)).catch(() => {});
+        checkUpdates().then(setUpdates).catch(() => {});
     }, []);
 
     const handleNav = item => {
@@ -122,7 +148,7 @@ export default function App() {
         setQuery(val);
         clearTimeout(timer.current);
         if (!val.trim()) { loadNav(active); return; }
-        if (isLib) return;
+        if (isLib || isUpdates) return;
         timer.current = setTimeout(async () => {
             setLoading(true);
             try {
@@ -135,12 +161,14 @@ export default function App() {
         }, 300);
     };
 
-    const shown = isLib && query.trim()
+    const shown = (isLib || isUpdates) && query.trim()
     ? apps.filter(a => (a.name || '').toLowerCase().includes(query.toLowerCase()) || (a.app_id || '').toLowerCase().includes(query.toLowerCase()))
     : apps;
 
     const sub = isLib
     ? `${shown.length} installed app${shown.length !== 1 ? 's' : ''}`
+    : isUpdates
+    ? updates.length ? `${updates.length} update${updates.length !== 1 ? 's' : ''} available` : 'All apps up to date'
     : query ? `${shown.length} result${shown.length !== 1 ? 's' : ''} for "${query}"`
     : loading ? 'Loading…'
     : `${shown.length.toLocaleString()} of ${total.toLocaleString()} apps`;
@@ -160,6 +188,7 @@ export default function App() {
                 <span className="nav-icon"><item.icon /></span>
                 {item.label}
                 {item.isLibrary && libCount > 0 && <span className="nav-badge">{libCount}</span>}
+                {item.isUpdates && updates.length > 0 && <span className="nav-badge" style={{ background:'rgba(255,180,0,.15)', color:'#ffb400', borderColor:'rgba(255,180,0,.25)' }}>{updates.length}</span>}
                 </button>
             ))}
             <div className="sidebar-hr" />
@@ -177,15 +206,15 @@ export default function App() {
         <div className="topbar-title">{active.label}</div>
         <div className="topbar-sub">{sub}</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
         {qActive > 0 && (
             <button className="queue-btn" onClick={() => setDrawer(true)}>
-            <span className="q-spinner" />{qActive} installing
+            <span className="q-spinner"/>{qActive} installing
             </button>
         )}
         <SearchBar
         onSearch={handleSearch}
-        placeholder={isLib ? 'Filter installed apps…' : 'Search apps, utilities, games…'}
+        placeholder={isLib ? 'Filter installed apps…' : isUpdates ? 'Filter updates…' : 'Search apps, utilities, games…'}
         resultCount={query ? shown.length : undefined}
         />
         </div>
@@ -198,14 +227,42 @@ export default function App() {
             </div>
         )}
 
+        {isUpdates && !loading && updates.length > 0 && (
+            <div className="lib-banner" style={{ borderColor:'rgba(255,180,0,.2)', background:'linear-gradient(135deg,rgba(255,180,0,.07),rgba(124,106,255,.07))' }}>
+            <div className="lib-banner-icon" style={{ background:'linear-gradient(135deg,rgba(255,180,0,.2),rgba(124,106,255,.2))' }}>
+            <UpdateIcon size={20} color="#ffb400" />
+            </div>
+            <div style={{ flex:1 }}>
+            <h3>{updates.length} update{updates.length !== 1 ? 's' : ''} available</h3>
+            <p>Click an app to update, or update all at once.</p>
+            </div>
+            <button className="btn btn-install" style={{ background:'rgba(255,180,0,.15)', color:'#ffb400', border:'1px solid rgba(255,180,0,.3)' }}
+            onClick={() => updates.forEach(u => update(u.app_id, u.name || u.app_id))}>
+            Update All
+            </button>
+            </div>
+        )}
+
         <main className="content">
         <AppGrid
-        apps={shown} isLoading={loading} isLibrary={isLib}
-        queue={queue} onInstall={install} onUninstall={uninstall}
+        apps={shown} isLoading={loading} isLibrary={isLib || isUpdates}
+        queue={queue} onInstall={isUpdates ? update : install} onUninstall={uninstall}
+        onOpen={setDetail}
         hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore}
         />
         </main>
         </div>
+
+        {detail && (
+            <AppDetail
+            app={detail}
+            isInstalled={installedSet.has((detail.app_id || detail.id || '').replace(/_/g, '.')) || !!detail.installed}
+            queue={queue}
+            onInstall={install}
+            onUninstall={uninstall}
+            onBack={() => setDetail(null)}
+            />
+        )}
 
         {drawer && Object.keys(queue).length > 0 && <InstallDrawer queue={queue} onClose={() => setDrawer(false)} />}
         </div>
@@ -226,6 +283,9 @@ function EduIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" 
 function NetIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>; }
 function MediaIcon()   { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>; }
 function SysIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>; }
+function UpdateIcon({ size = 15, color = 'currentColor' }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
+}
 function LibraryIcon({ size = 15, color = 'currentColor' }) {
     return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>;
 }

@@ -1,24 +1,40 @@
 import React, { useState } from 'react';
 
-const AppCard = React.memo(function AppCard({ app, forceInstalled, queue = {}, onInstall, onUninstall, style }) {
+const AppCard = React.memo(function AppCard({ app, forceInstalled, queue = {}, onInstall, onUninstall, onOpen, style }) {
     const [imgErr, setImgErr] = useState(false);
-    const appId   = (app.app_id || app.id || '').replace(/_/g, '.');
-    const name    = app.name || app.title || 'Unknown';
-    const q       = queue[appId];
+    const appId = (app.app_id || app.id || '').replace(/_/g, '.');
+    const name  = app.name || app.title || 'Unknown';
+    const q     = queue[appId];
     const active  = q?.status === 'installing' || q?.status === 'uninstalling';
     const done    = forceInstalled || q?.status === 'done';
     const errored = q?.status === 'error';
 
-const btn = () => {
-    if (q?.status === 'installing')   return <button className="btn btn-working" disabled><span className="spinner"/>Installing…</button>;
-    if (q?.status === 'uninstalling') return <button className="btn btn-working" disabled><span className="spinner"/>Removing…</button>;
-    if (errored)  return <button className="btn btn-retry"   onClick={() => onInstall?.(appId, name)}><RetryIcon/>Retry</button>;
-    if (done)     return <button className="btn btn-remove"  onClick={() => onUninstall?.(appId, name)}><TrashIcon/>Uninstall</button>;
-    return              <button className="btn btn-install"  onClick={() => onInstall?.(appId, name)}><DlIcon/>Install</button>;
+const btn = (e) => {
+    e.stopPropagation();
+    if (q?.status === 'installing')   return;
+    if (q?.status === 'uninstalling') return;
+    if (errored)  { onInstall?.(appId, name); return; }
+    if (done)     { onUninstall?.(appId, name); return; }
+    onInstall?.(appId, name);
+};
+
+const label = () => {
+    if (q?.status === 'installing')   return <><span className="spinner"/>Installing…</>;
+    if (q?.status === 'uninstalling') return <><span className="spinner"/>Removing…</>;
+    if (errored)  return <><RetryIcon/>Retry</>;
+    if (done)     return <><TrashIcon/>Uninstall</>;
+    return <><DlIcon/>Install</>;
+};
+
+const btnClass = () => {
+    if (active)  return 'btn btn-working';
+    if (errored) return 'btn btn-retry';
+    if (done)    return 'btn btn-remove';
+    return 'btn btn-install';
 };
 
 return (
-    <div className={`app-card${done || active ? ' installed' : ''}`} style={style}>
+    <div className={`app-card${done || active ? ' installed' : ''}`} style={style} onClick={() => onOpen?.(app)}>
     {active && <div className="card-progress"><div className="card-progress-bar"/></div>}
     <div className="card-header">
     {!imgErr && (app.icon_url || app.icon)
@@ -34,7 +50,7 @@ return (
         {done
             ? <div className="installed-badge"><ChkIcon/>Installed</div>
             : <span className="card-size">{app.download_size ? `${(app.download_size/1024/1024).toFixed(0)} MB` : 'Flathub'}</span>}
-            {btn()}
+            <button className={btnClass()} disabled={active} onClick={btn}>{label()}</button>
             </div>
             </div>
 );

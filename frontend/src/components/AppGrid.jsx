@@ -2,14 +2,12 @@ import React, { useEffect, useState } from 'react';
 import AppCard from './AppCard';
 import { checkInstalledBatch } from '../services/api';
 
-export default function AppGrid({ apps, isLoading, isLibrary = false, queue = {}, onInstall, onUninstall, hasMore, loadingMore, onLoadMore }) {
+export default function AppGrid({ apps, isLoading, isLibrary = false, queue = {}, onInstall, onUninstall, onOpen, hasMore, loadingMore, onLoadMore }) {
     const [installedSet, setInstalledSet] = useState(new Set());
 
     useEffect(() => {
         if (isLibrary || isLoading || !apps.length) return;
-        const ids = apps
-        .map(a => (a.app_id || a.id || '').replace(/_/g, '.'))
-        .filter(id => id && id.split('.').length >= 3);
+        const ids = apps.map(a => (a.app_id || a.id || '').replace(/_/g, '.')).filter(id => id && id.split('.').length >= 3);
         if (ids.length) checkInstalledBatch(ids).then(setInstalledSet).catch(() => {});
     }, [apps, isLoading, isLibrary]);
 
@@ -27,7 +25,7 @@ export default function AppGrid({ apps, isLoading, isLibrary = false, queue = {}
                 </div>
                 <div className="sk" style={{ height:11 }} />
                 <div className="sk" style={{ height:11, width:'55%' }} />
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div style={{ display:'flex', justifyContent:'space-between' }}>
                 <div className="sk" style={{ height:11, width:46, borderRadius:6 }} />
                 <div className="sk" style={{ height:34, width:88, borderRadius:10 }} />
                 </div>
@@ -57,24 +55,17 @@ export default function AppGrid({ apps, isLoading, isLibrary = false, queue = {}
             const appId = (app.app_id || app.id || '').replace(/_/g, '.');
             return (
                 <AppCard
-                key={appId || i}
-                app={app}
+                key={appId || i} app={app}
                 forceInstalled={isLibrary || !!app.installed || installedSet.has(appId)}
-                queue={queue}
-                onInstall={onInstall}
-                onUninstall={onUninstall}
+                queue={queue} onInstall={onInstall} onUninstall={onUninstall} onOpen={onOpen}
                 style={{ animationDelay: `${Math.min(i * 0.02, 0.4)}s` }}
                 />
             );
         })}
-
         {(hasMore || loadingMore) && (
             <div className="load-more-wrap">
             <button className="load-more-btn" onClick={onLoadMore} disabled={loadingMore}>
-            {loadingMore
-                ? <><span className="spinner" style={{ borderTopColor: '#7c6aff' }} />Loading…</>
-                : 'Load more apps'
-            }
+            {loadingMore ? <><span className="spinner" style={{ borderTopColor:'#7c6aff' }}/>Loading…</> : 'Load more apps'}
             </button>
             </div>
         )}

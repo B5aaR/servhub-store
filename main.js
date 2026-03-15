@@ -12,7 +12,11 @@ function createWindow() {
         autoHideMenuBar: true,
         backgroundColor: '#08080f',
         icon: path.join(__dirname, 'icon.png'),
-                            webPreferences: { nodeIntegration: true, contextIsolation: false },
+                            webPreferences: {
+                                nodeIntegration: false,
+                            contextIsolation: true,
+                            preload: path.join(__dirname, 'preload.js'),
+                            },
     });
     win.loadFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
 }
@@ -27,11 +31,13 @@ function sanitize(id) {
 
 function httpsGet(url) {
     return new Promise((resolve, reject) => {
-        https.get(url, { headers: { 'User-Agent': 'ServHub/1.0', 'Accept': 'application/json' } }, res => {
+        const req = https.get(url, { headers: { 'User-Agent': 'ServHub/1.0', 'Accept': 'application/json' } }, res => {
             let d = '';
-            res.on('data', c => d += c);
+            res.on('data', chunk => d += chunk);
             res.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
-        }).on('error', reject);
+        });
+        req.setTimeout(12000, () => { req.destroy(); reject(new Error('Request timed out')); });
+        req.on('error', reject);
     });
 }
 
@@ -51,6 +57,7 @@ function httpsPost(url, body) {
             res.on('data', c => d += c);
             res.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
         });
+        req.setTimeout(12000, () => { req.destroy(); reject(new Error('Request timed out')); });
         req.on('error', reject);
         req.write(payload);
         req.end();
@@ -66,12 +73,6 @@ const CATEGORY_MAP = {
     system: 'System',
 };
 
-const COLLECTION_SLUG = {
-    Game: 'game', Development: 'development', Utility: 'utility',
-    Office: 'office', Graphics: 'graphics', Science: 'science',
-    Education: 'education', Network: 'network', AudioVideo: 'audiovideo',
-    System: 'system',
-};
 
 const cache = new Map();
 const CACHE_TTL = 8 * 60 * 1000;
@@ -89,7 +90,7 @@ function normalize(data) {
     return { hits, estimatedTotalHits: data.estimatedTotalHits ?? data.total ?? hits.length };
 }
 
-async function flathubSearch({ query = '', catValue = null, hitsPerPage = 250, page = 1 } = {}) {
+async function flathubSearch({ query = '', catValue = null, hitsPerPage = 50, page = 1 } = {}) {
     const base = { query, hitsPerPage, limit: hitsPerPage, page, offset: (page - 1) * hitsPerPage };
     const forms = catValue ? [
         { filter: `main_categories = "${catValue}"` },
@@ -107,7 +108,14 @@ async function flathubSearch({ query = '', catValue = null, hitsPerPage = 250, p
     return { hits: [], estimatedTotalHits: 0 };
 }
 
-async function getApps({ category = '', section = '', hitsPerPage = 250, page = 1 } = {}) {
+const COLLECTION_SLUG = {
+    Game: 'game', Development: 'development', Utility: 'utility',
+    Office: 'office', Graphics: 'graphics', Science: 'science',
+    Education: 'education', Network: 'network', AudioVideo: 'audiovideo',
+    System: 'system',
+};
+
+async function getApps({ category = '', section = '', hitsPerPage = 50, page = 1 } = {}) {
     const catValue = category ? (CATEGORY_MAP[category.toLowerCase()] ?? category) : null;
 
     if (section === 'new')      return httpsGet(`${FLATHUB}/collection/recently-added`).then(normalize).catch(() => flathubSearch({ hitsPerPage, page }));
@@ -137,6 +145,37 @@ ipcMain.handle('search-apps', (_e, { query, category, hitsPerPage }) => {
     return flathubSearch({ query, catValue, hitsPerPage });
 });
 
+ipcMain.handle('get-app-details', (_e, appId) =>
+cached(`detail:${appId}`, () => httpsGet(`${FLATHUB}/appstream/${appId}`))
+);
+
+ipcMain.handle('check-updates', async () => {
+    return new Promise(resolve => {
+        exec('flatpak remote-ls --updates --app --columns=application,version', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
+            if (!stdout?.trim()) return resolve([]);
+            const updates = stdout.trim().split('\n').filter(Boolean).map(line => {
+                const [app_id, version] = line.split('\t').map(s => s?.trim() || '');
+                return { app_id, version };
+            });
+            resolve(updates);
+        });
+    });
+});
+
+ipcMain.on('update-app', (e, { appId, name }) => {
+    const safe = sanitize(appId);
+    if (!safe) return e.sender.send('install-done', { appId, success: false, message: `Invalid ID` });
+    spawnFlatpak(e, ['update', '--user', '-y', safe], appId, name, 'install-done');
+});
+
+ipcMain.on('launch-app', (e, appId) => {
+    const safe = sanitize(appId);
+    if (!safe) return;
+    exec(`flatpak run ${safe}`, { timeout: 10000 }, (err) => {
+        if (err) e.sender.send('launch-error', { appId, message: err.message });
+    });
+});
+
 function spawnFlatpak(e, args, appId, name, doneEvent) {
     const proc = spawn('flatpak', args);
     proc.stdout.on('data', d => e.sender.send('install-log', { appId, line: d.toString() }));
@@ -161,14 +200,14 @@ ipcMain.on('uninstall-app', (e, { appId, name }) => {
 });
 
 ipcMain.on('check-installed-batch', (e, appIds) => {
-    exec('flatpak list --user --app --columns=application', (_err, stdout) => {
+    exec('flatpak list --app --columns=application', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
         const ids = (stdout || '').split('\n').map(s => s.trim()).filter(Boolean);
         e.reply('check-installed-batch-reply', { installed: ids.filter(id => appIds.includes(id)) });
     });
 });
 
 ipcMain.on('get-installed-apps', (e) => {
-    exec('flatpak list --user --app --columns=application,name,version,branch,origin', (_err, stdout) => {
+    exec('flatpak list --app --columns=application,name,version,branch,origin', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
         if (!stdout?.trim()) return e.reply('get-installed-apps-reply', { apps: [] });
         const apps = stdout.trim().split('\n').filter(Boolean).map(line => {
             const [app_id, name, version, branch, origin] = line.split('\t').map(s => s?.trim() || '');

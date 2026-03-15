@@ -5,7 +5,7 @@
   
   **A fast, modern Linux app store powered by Flathub**
   
-  ![Version](https://img.shields.io/badge/version-1.0.3-7c6aff?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-1.0.4-7c6aff?style=flat-square)
   ![Platform](https://img.shields.io/badge/platform-Linux-00e5c0?style=flat-square)
   ![License](https://img.shields.io/badge/license-MIT-7c6aff?style=flat-square)
   ![AUR](https://img.shields.io/aur/version/servhub?style=flat-square&color=00e5c0)
@@ -22,15 +22,18 @@ ServHub talks directly to Flathub's servers — no middleman, no backend, comple
 
 ## Features
 
-- Browse all 3363+ apps directly from Flathub
-- Server-side pagination — loads 50 apps at a time per category
+- Browse all 3000+ apps directly from Flathub
+- Full app detail page with screenshots, description, version history and permissions
+- Screenshot lightbox with zoom and keyboard navigation
 - Install and uninstall Flatpak apps with one click
-- Install multiple apps simultaneously
-- Live install progress drawer with real-time terminal output
+- Install multiple apps simultaneously with live terminal output
+- Update checker — see all outdated apps and update with one click
+- Launch installed apps directly from ServHub
+- Popularity stars based on monthly download count
 - Library tab showing all your installed apps
 - Live search with instant results
 - Categories — Games, Development, Graphics, Office, Science and more
-- Fast — built-in caching, lazy image loading
+- Fast — built-in caching, lazy image loading, paginated results
 - Completely standalone — no server or backend required
 - Clean dark UI built with React + Electron
 
@@ -47,8 +50,8 @@ yay -S servhub
 Download the latest AppImage from [Releases](https://github.com/B5aaR/servhub-store/releases) then:
 
 ```bash
-chmod +x ServHub-1.0.3.AppImage
-./ServHub-1.0.3.AppImage
+chmod +x ServHub-1.0.4.AppImage
+./ServHub-1.0.4.AppImage
 ```
 
 ### Quick install script

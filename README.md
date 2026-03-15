@@ -12,9 +12,18 @@
 
   <br/>
 
-  <img src="preview-1.png" alt="ServHub - Browse Apps" width="800" />
-  <img src="preview-2.png" alt="ServHub - App Detail" width="800" />
-  <img src="preview-3.png" alt="ServHub - Library" width="800" />
+  <table>
+    <tr>
+      <td><img src="preview-1.png" alt="Browse Apps" width="260" /></td>
+      <td><img src="preview-2.png" alt="App Detail" width="260" /></td>
+      <td><img src="preview-3.png" alt="Library" width="260" /></td>
+    </tr>
+    <tr>
+      <td align="center"><sub>Browse Apps</sub></td>
+      <td align="center"><sub>App Detail</sub></td>
+      <td align="center"><sub>Library</sub></td>
+    </tr>
+  </table>
 
 </div>
 

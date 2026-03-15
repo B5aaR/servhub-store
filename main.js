@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const https = require('https');
 
 let win;
@@ -28,12 +28,9 @@ function sanitize(id) {
 function httpsGet(url) {
     return new Promise((resolve, reject) => {
         https.get(url, { headers: { 'User-Agent': 'ServHub/1.0', 'Accept': 'application/json' } }, res => {
-            let data = '';
-            res.on('data', c => data += c);
-            res.on('end', () => {
-                try { resolve(JSON.parse(data)); }
-                catch (e) { reject(e); }
-            });
+            let d = '';
+            res.on('data', c => d += c);
+            res.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
         }).on('error', reject);
     });
 }
@@ -41,7 +38,7 @@ function httpsGet(url) {
 function httpsPost(url, body) {
     return new Promise((resolve, reject) => {
         const payload = JSON.stringify(body);
-        const options = {
+        const req = https.request(url, {
             method: 'POST',
             headers: {
                 'User-Agent': 'ServHub/1.0',
@@ -49,14 +46,10 @@ function httpsPost(url, body) {
                 'Accept': 'application/json',
                 'Content-Length': Buffer.byteLength(payload),
             },
-        };
-        const req = https.request(url, options, res => {
-            let data = '';
-            res.on('data', c => data += c);
-            res.on('end', () => {
-                try { resolve(JSON.parse(data)); }
-                catch (e) { reject(e); }
-            });
+        }, res => {
+            let d = '';
+            res.on('data', c => d += c);
+            res.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
         });
         req.on('error', reject);
         req.write(payload);
@@ -117,8 +110,8 @@ async function flathubSearch({ query = '', catValue = null, hitsPerPage = 250, p
 async function getApps({ category = '', section = '', hitsPerPage = 250, page = 1 } = {}) {
     const catValue = category ? (CATEGORY_MAP[category.toLowerCase()] ?? category) : null;
 
-    if (section === 'new') return httpsGet(`${FLATHUB}/collection/recently-added`).then(normalize).catch(() => flathubSearch({ hitsPerPage, page }));
-    if (section === 'popular') return httpsGet(`${FLATHUB}/collection/popular`).then(normalize).catch(() => flathubSearch({ hitsPerPage, page }));
+    if (section === 'new')      return httpsGet(`${FLATHUB}/collection/recently-added`).then(normalize).catch(() => flathubSearch({ hitsPerPage, page }));
+    if (section === 'popular')  return httpsGet(`${FLATHUB}/collection/popular`).then(normalize).catch(() => flathubSearch({ hitsPerPage, page }));
     if (section === 'featured') return httpsGet(`${FLATHUB}/collection/recently-updated`).then(normalize).catch(() => flathubSearch({ hitsPerPage, page }));
 
     if (catValue) {
@@ -135,32 +128,36 @@ async function getApps({ category = '', section = '', hitsPerPage = 250, page = 
     return flathubSearch({ hitsPerPage, page });
 }
 
-ipcMain.handle('fetch-apps', async (_e, params) => {
-    const key = `apps:${JSON.stringify(params)}`;
-    return cached(key, () => getApps(params));
-});
+ipcMain.handle('fetch-apps', (_e, params) =>
+cached(`apps:${JSON.stringify(params)}`, () => getApps(params))
+);
 
-ipcMain.handle('search-apps', async (_e, { query, category, hitsPerPage }) => {
+ipcMain.handle('search-apps', (_e, { query, category, hitsPerPage }) => {
     const catValue = category ? (CATEGORY_MAP[category.toLowerCase()] ?? category) : null;
     return flathubSearch({ query, catValue, hitsPerPage });
 });
 
-ipcMain.on('install-app', (e, appId) => {
-    const safe = sanitize(appId);
-    if (!safe) return e.reply('install-reply', { success: false, message: `Invalid ID: "${appId}"` });
-    exec(`flatpak install --user -y flathub ${safe}`, { timeout: 120000 }, (err, _o, se) => {
+function spawnFlatpak(e, args, appId, name, doneEvent) {
+    const proc = spawn('flatpak', args);
+    proc.stdout.on('data', d => e.sender.send('install-log', { appId, line: d.toString() }));
+    proc.stderr.on('data', d => e.sender.send('install-log', { appId, line: d.toString() }));
+    proc.on('close', code => {
         refocus();
-        e.reply('install-reply', err ? { success: false, message: se?.trim() || err.message } : { success: true });
+        e.sender.send(doneEvent, { appId, name, success: code === 0, message: code !== 0 ? `Exited with code ${code}` : null });
     });
+    proc.on('error', err => e.sender.send(doneEvent, { appId, name, success: false, message: err.message }));
+}
+
+ipcMain.on('install-app', (e, { appId, name }) => {
+    const safe = sanitize(appId);
+    if (!safe) return e.sender.send('install-done', { appId, success: false, message: `Invalid ID: "${appId}"` });
+    spawnFlatpak(e, ['install', '--user', '-y', 'flathub', safe], appId, name, 'install-done');
 });
 
-ipcMain.on('uninstall-app', (e, appId) => {
+ipcMain.on('uninstall-app', (e, { appId, name }) => {
     const safe = sanitize(appId);
-    if (!safe) return e.reply('uninstall-reply', { success: false, message: `Invalid ID: "${appId}"` });
-    exec(`flatpak uninstall --user -y ${safe}`, { timeout: 60000 }, (err, _o, se) => {
-        refocus();
-        e.reply('uninstall-reply', err ? { success: false, message: se?.trim() || err.message } : { success: true });
-    });
+    if (!safe) return e.sender.send('uninstall-done', { appId, success: false, message: `Invalid ID: "${appId}"` });
+    spawnFlatpak(e, ['uninstall', '--user', '-y', safe], appId, name, 'uninstall-done');
 });
 
 ipcMain.on('check-installed-batch', (e, appIds) => {
@@ -176,8 +173,8 @@ ipcMain.on('get-installed-apps', (e) => {
         const apps = stdout.trim().split('\n').filter(Boolean).map(line => {
             const [app_id, name, version, branch, origin] = line.split('\t').map(s => s?.trim() || '');
             return {
-                app_id, name: name || app_id, version, branch: branch || 'stable',
-                origin: origin || 'flathub',
+                app_id, name: name || app_id, version,
+                branch: branch || 'stable', origin: origin || 'flathub',
                 icon_url: `https://dl.flathub.org/media/${app_id.replace(/\./g, '/')}/128x128/icon.png`,
                                                                    summary: `${origin || 'flathub'} · ${version ? 'v' + version : 'installed'}`,
                                                                    installed: true,

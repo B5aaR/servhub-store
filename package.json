@@ -1,6 +1,6 @@
 {
   "name": "servhub",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ServHub — Linux App Store",
   "main": "main.js",
   "scripts": {

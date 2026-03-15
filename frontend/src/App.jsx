@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchApps, searchApps, getInstalledApps } from './services/api';
+import { fetchApps, searchApps, getInstalledApps, startInstall, startUninstall, onInstallLog, onInstallDone, onUninstallDone, removeListeners } from './services/api';
 import AppGrid from './components/AppGrid';
 import SearchBar from './components/SearchBar';
+import InstallDrawer from './components/InstallDrawer';
+import logo from '../public/icon.png';
 
 const NAV = [
     { label: 'Discover', items: [
@@ -27,20 +29,54 @@ const NAV = [
 ]},
 ];
 
-const ALL_ITEMS = NAV.flatMap(s => s.items);
+const ALL = NAV.flatMap(s => s.items);
 
 export default function App() {
-    const [apps, setApps]                   = useState([]);
-    const [loading, setLoading]             = useState(true);
-    const [query, setQuery]                 = useState('');
-    const [activeId, setActiveId]           = useState('all');
-    const [total, setTotal]                 = useState(0);
-    const [installedCount, setInstalledCount] = useState(0);
-    const debounce = useRef(null);
-    const activeItem = ALL_ITEMS.find(i => i.id === activeId) || ALL_ITEMS[2];
-    const isLibrary = !!activeItem.isLibrary;
+    const [apps, setApps]           = useState([]);
+    const [loading, setLoading]     = useState(true);
+    const [query, setQuery]         = useState('');
+    const [activeId, setActiveId]   = useState('all');
+    const [total, setTotal]         = useState(0);
+    const [libCount, setLibCount]   = useState(0);
+    const [queue, setQueue]         = useState({});
+    const [drawer, setDrawer]       = useState(false);
+    const timer = useRef(null);
 
-    const loadNav = useCallback(async (item) => {
+    const active   = ALL.find(i => i.id === activeId) || ALL[2];
+    const isLib    = !!active.isLibrary;
+    const qActive  = Object.values(queue).filter(e => e.status === 'installing' || e.status === 'uninstalling').length;
+
+    useEffect(() => {
+        onInstallLog(({ appId, line }) => {
+            setQueue(q => q[appId] ? { ...q, [appId]: { ...q[appId], logs: [...q[appId].logs, line.trimEnd()] } } : q);
+        });
+        onInstallDone(({ appId, name, success, message }) => {
+            setQueue(q => ({ ...q, [appId]: { ...q[appId], status: success ? 'done' : 'error', message } }));
+            if (success) setLibCount(c => c + 1);
+        });
+            onUninstallDone(({ appId, success }) => {
+                setQueue(q => { const n = { ...q }; delete n[appId]; return n; });
+                if (success) {
+                    setApps(p => p.filter(a => (a.app_id || a.id) !== appId));
+                    setLibCount(c => Math.max(0, c - 1));
+                }
+            });
+            return removeListeners;
+    }, []);
+
+    const install = useCallback((appId, name) => {
+        setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } }));
+        setDrawer(true);
+        startInstall(appId, name);
+    }, []);
+
+    const uninstall = useCallback((appId, name) => {
+        setQueue(q => ({ ...q, [appId]: { appId, name, status: 'uninstalling', logs: [] } }));
+        setDrawer(true);
+        startUninstall(appId, name);
+    }, []);
+
+    const loadNav = useCallback(async item => {
         setLoading(true);
         setApps([]);
         try {
@@ -49,82 +85,75 @@ export default function App() {
                 const marked = list.map(a => ({ ...a, installed: true }));
                 setApps(marked);
                 setTotal(marked.length);
-                setInstalledCount(marked.length);
+                setLibCount(marked.length);
                 return;
             }
             const data = await fetchApps({ category: item.category ?? '', section: item.section ?? '' });
             const list = Array.isArray(data) ? data : (data.hits || []);
             setApps(list);
             setTotal(data.estimatedTotalHits ?? list.length);
-        } catch (e) {
-            console.error(e);
-            setApps([]);
-        } finally {
-            setLoading(false);
-        }
+        } catch { setApps([]); }
+        finally { setLoading(false); }
     }, []);
 
     useEffect(() => {
-        loadNav(activeItem);
-        getInstalledApps().then(l => setInstalledCount(l.length)).catch(() => {});
+        loadNav(active);
+        getInstalledApps().then(l => setLibCount(l.length)).catch(() => {});
     }, []);
 
-    const handleNav = (item) => {
+    const handleNav = item => {
         if (item.id === activeId && !query) return;
         setQuery('');
         setActiveId(item.id);
         loadNav(item);
     };
 
-    const handleSearch = (val) => {
+    const handleSearch = val => {
         setQuery(val);
-        clearTimeout(debounce.current);
-        if (!val.trim()) { loadNav(activeItem); return; }
-        if (isLibrary) return;
-        debounce.current = setTimeout(async () => {
+        clearTimeout(timer.current);
+        if (!val.trim()) { loadNav(active); return; }
+        if (isLib) return;
+        timer.current = setTimeout(async () => {
             setLoading(true);
             try {
-                const data = await searchApps(val, { category: activeItem.category ?? '' });
+                const data = await searchApps(val, { category: active.category ?? '' });
                 const list = Array.isArray(data) ? data : (data.hits || []);
                 setApps(list);
                 setTotal(data.estimatedTotalHits ?? list.length);
-            } catch (e) { console.error(e); }
+            } catch {}
             finally { setLoading(false); }
         }, 300);
     };
 
-    const displayed = isLibrary && query.trim()
+    const shown = isLib && query.trim()
     ? apps.filter(a => (a.name || '').toLowerCase().includes(query.toLowerCase()) || (a.app_id || '').toLowerCase().includes(query.toLowerCase()))
     : apps;
 
-    const subtitle = isLibrary
-    ? `${displayed.length} installed app${displayed.length !== 1 ? 's' : ''}`
-    : query ? `${displayed.length} result${displayed.length !== 1 ? 's' : ''} for "${query}"`
-    : loading ? 'Loading…'
-    : `${total.toLocaleString()} apps`;
+    const sub = isLib
+    ? `${shown.length} installed app${shown.length !== 1 ? 's' : ''}`
+    : query ? `${shown.length} result${shown.length !== 1 ? 's' : ''} for "${query}"`
+    : loading ? 'Loading…' : `${total.toLocaleString()} apps`;
 
     return (
         <div className="layout">
         <aside className="sidebar">
         <div className="sidebar-logo">
-        <img src="/icon.png" width="36" height="36" style={{ borderRadius: 10 }} alt="ServHub" />
+        <img src={logo} width="36" height="36" style={{ borderRadius: 10 }} alt="ServHub" />
         <div className="logo-text">Serv<span>Hub</span></div>
         </div>
-
-        {NAV.map(section => (
-            <React.Fragment key={section.label}>
-            <div className="sidebar-label">{section.label}</div>
-            {section.items.map(item => (
+        {NAV.map(s => (
+            <React.Fragment key={s.label}>
+            <div className="sidebar-label">{s.label}</div>
+            {s.items.map(item => (
                 <button key={item.id} className={`nav-btn${activeId === item.id ? ' active' : ''}`} onClick={() => handleNav(item)}>
                 <span className="nav-icon"><item.icon /></span>
                 {item.label}
-                {item.isLibrary && installedCount > 0 && <span className="nav-badge">{installedCount}</span>}
+                {item.isLibrary && libCount > 0 && <span className="nav-badge">{libCount}</span>}
                 </button>
             ))}
             <div className="sidebar-hr" />
             </React.Fragment>
         ))}
-
         <div className="sidebar-footer">
         Powered by Flathub<br />
         <span style={{ color: '#2a2a48' }}>ServHub v1.0</span>
@@ -134,38 +163,36 @@ export default function App() {
         <div className="main">
         <header className="topbar">
         <div className="topbar-left">
-        <div className="topbar-title">{activeItem.label}</div>
-        <div className="topbar-sub">{subtitle}</div>
+        <div className="topbar-title">{active.label}</div>
+        <div className="topbar-sub">{sub}</div>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {qActive > 0 && (
+            <button className="queue-btn" onClick={() => setDrawer(true)}>
+            <span className="q-spinner" />{qActive} installing
+            </button>
+        )}
         <SearchBar
         onSearch={handleSearch}
-        placeholder={isLibrary ? 'Filter installed apps…' : 'Search apps, utilities, games…'}
-        resultCount={query ? displayed.length : undefined}
+        placeholder={isLib ? 'Filter installed apps…' : 'Search apps, utilities, games…'}
+        resultCount={query ? shown.length : undefined}
         />
+        </div>
         </header>
 
-        {isLibrary && !loading && (
+        {isLib && !loading && (
             <div className="lib-banner">
             <div className="lib-banner-icon"><LibraryIcon size={20} color="#00e5c0" /></div>
-            <div>
-            <h3>Your Installed Apps</h3>
-            <p>All Flatpak apps installed on your system.</p>
-            </div>
+            <div><h3>Your Installed Apps</h3><p>All Flatpak apps installed on your system.</p></div>
             </div>
         )}
 
         <main className="content">
-        <AppGrid
-        apps={displayed}
-        isLoading={loading}
-        isLibrary={isLibrary}
-        onUninstall={(id) => {
-            setApps(prev => prev.filter(a => (a.app_id || a.id) !== id));
-            setInstalledCount(prev => Math.max(0, prev - 1));
-        }}
-        />
+        <AppGrid apps={shown} isLoading={loading} isLibrary={isLib} queue={queue} onInstall={install} onUninstall={uninstall} />
         </main>
         </div>
+
+        {drawer && Object.keys(queue).length > 0 && <InstallDrawer queue={queue} onClose={() => setDrawer(false)} />}
         </div>
     );
 }

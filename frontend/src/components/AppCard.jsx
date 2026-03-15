@@ -1,69 +1,43 @@
 import React, { useState } from 'react';
-import { requestInstall, requestUninstall } from '../services/api';
 
-const S = { IDLE: 0, INSTALLING: 1, INSTALLED: 2, UNINSTALLING: 3, ERR_I: 4, ERR_U: 5 };
-
-const AppCard = React.memo(function AppCard({ app, forceInstalled = false, onUninstall, style }) {
-    const [status, setStatus] = useState(forceInstalled ? S.INSTALLED : S.IDLE);
+const AppCard = React.memo(function AppCard({ app, forceInstalled, queue = {}, onInstall, onUninstall, style }) {
     const [imgErr, setImgErr] = useState(false);
-
-    if (forceInstalled && status === S.IDLE) setStatus(S.INSTALLED);
-
     const appId   = (app.app_id || app.id || '').replace(/_/g, '.');
-    const appName = app.name || app.title || 'Unknown';
-    const initials = appName.slice(0, 2).toUpperCase();
-    const isInstalled = status === S.INSTALLED || status === S.UNINSTALLING || status === S.ERR_U;
+    const name    = app.name || app.title || 'Unknown';
+    const q       = queue[appId];
+    const active  = q?.status === 'installing' || q?.status === 'uninstalling';
+    const done    = forceInstalled || q?.status === 'done';
+    const errored = q?.status === 'error';
 
-    const install = async () => {
-        if (!appId || appId.split('.').length < 3) return;
-        setStatus(S.INSTALLING);
-        try { await requestInstall(appId); setStatus(S.INSTALLED); }
-        catch { setStatus(S.ERR_I); }
-    };
+const btn = () => {
+    if (q?.status === 'installing')   return <button className="btn btn-working" disabled><span className="spinner"/>Installing…</button>;
+    if (q?.status === 'uninstalling') return <button className="btn btn-working" disabled><span className="spinner"/>Removing…</button>;
+    if (errored)  return <button className="btn btn-retry"   onClick={() => onInstall?.(appId, name)}><RetryIcon/>Retry</button>;
+    if (done)     return <button className="btn btn-remove"  onClick={() => onUninstall?.(appId, name)}><TrashIcon/>Uninstall</button>;
+    return              <button className="btn btn-install"  onClick={() => onInstall?.(appId, name)}><DlIcon/>Install</button>;
+};
 
-    const uninstall = async () => {
-        setStatus(S.UNINSTALLING);
-        try { await requestUninstall(appId); setStatus(S.IDLE); onUninstall?.(appId); }
-        catch { setStatus(S.ERR_U); }
-    };
-
-    const btn = () => {
-        switch (status) {
-            case S.IDLE:         return <button className="btn btn-install" onClick={install}><DlIcon />Install</button>;
-            case S.INSTALLING:   return <button className="btn btn-working" disabled><span className="spinner"/>Installing…</button>;
-            case S.INSTALLED:    return <button className="btn btn-remove" onClick={uninstall}><TrashIcon />Uninstall</button>;
-            case S.UNINSTALLING: return <button className="btn btn-working" disabled><span className="spinner"/>Removing…</button>;
-            case S.ERR_I:        return <button className="btn btn-retry" onClick={install}><RetryIcon />Retry</button>;
-            case S.ERR_U:        return <button className="btn btn-retry" onClick={uninstall}><RetryIcon />Retry</button>;
-        }
-    };
-
-    return (
-        <div className={`app-card${isInstalled ? ' installed' : ''}`} style={style}>
-        <div className="card-header">
-        {!imgErr && (app.icon_url || app.icon)
-            ? <img className="card-icon" src={app.icon_url || app.icon} alt={appName} loading="lazy" onError={() => setImgErr(true)} />
-            : <div className="card-icon-fb">{initials}</div>
-        }
+return (
+    <div className={`app-card${done || active ? ' installed' : ''}`} style={style}>
+    {active && <div className="card-progress"><div className="card-progress-bar"/></div>}
+    <div className="card-header">
+    {!imgErr && (app.icon_url || app.icon)
+        ? <img className="card-icon" src={app.icon_url || app.icon} alt={name} loading="lazy" onError={() => setImgErr(true)} />
+        : <div className="card-icon-fb">{name.slice(0, 2).toUpperCase()}</div>}
         <div className="card-meta">
-        <div className="card-name">{appName}</div>
-        {(app.categories?.[0] || app.category) &&
-            <span className="card-cat">{app.categories?.[0] || app.category}</span>
-        }
+        <div className="card-name">{name}</div>
+        {(app.categories?.[0] || app.category) && <span className="card-cat">{app.categories?.[0] || app.category}</span>}
         </div>
         </div>
-        {(app.summary || app.description) &&
-            <p className="card-summary">{app.summary || app.description}</p>
-        }
+        {(app.summary || app.description) && <p className="card-summary">{app.summary || app.description}</p>}
         <div className="card-footer">
-        {isInstalled
-            ? <div className="installed-badge"><ChkIcon />Installed</div>
-            : <span className="card-size">{app.download_size ? `${(app.download_size/1024/1024).toFixed(0)} MB` : 'Flathub'}</span>
-        }
-        {btn()}
-        </div>
-        </div>
-    );
+        {done
+            ? <div className="installed-badge"><ChkIcon/>Installed</div>
+            : <span className="card-size">{app.download_size ? `${(app.download_size/1024/1024).toFixed(0)} MB` : 'Flathub'}</span>}
+            {btn()}
+            </div>
+            </div>
+);
 });
 
 export default AppCard;

@@ -5,7 +5,7 @@
   
   **A fast, modern Linux app store powered by Flathub**
   
-  ![Version](https://img.shields.io/badge/version-1.0.0-7c6aff?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-1.0.1-7c6aff?style=flat-square)
   ![Platform](https://img.shields.io/badge/platform-Linux-00e5c0?style=flat-square)
   ![License](https://img.shields.io/badge/license-MIT-7c6aff?style=flat-square)
   ![AUR](https://img.shields.io/aur/version/servhub?style=flat-square&color=00e5c0)
@@ -18,14 +18,17 @@
 
 ServHub is a sleek, fast Linux app store that lets you browse, install, and manage Flatpak apps from Flathub — all from a clean, modern interface. Think GNOME Software or KDE Discover, but faster and lighter.
 
+ServHub talks directly to Flathub's servers — no middleman, no backend, completely standalone. When a new app is added to Flathub, it automatically shows up in ServHub.
+
 ## Features
 
-- Browse hundreds of apps from Flathub
+- Browse thousands of apps directly from Flathub
 - Install and uninstall Flatpak apps with one click
 - Library tab showing all your installed apps
 - Live search with instant results
 - Categories — Games, Development, Graphics, Office, Science and more
-- Fast — server-side caching, lazy image loading, paginated grid
+- Fast — built-in caching, lazy image loading, paginated grid
+- Completely standalone — no server or backend required
 - Clean dark UI built with React + Electron
 
 ## Install
@@ -41,8 +44,8 @@ yay -S servhub
 Download the latest AppImage from [Releases](https://github.com/B5aaR/servhub-store/releases) then:
 
 ```bash
-chmod +x ServHub-1.0.0.AppImage
-./ServHub-1.0.0.AppImage
+chmod +x ServHub-1.0.1.AppImage
+./ServHub-1.0.1.AppImage
 ```
 
 ### Quick install script
@@ -59,6 +62,14 @@ curl -fsSL https://raw.githubusercontent.com/B5aaR/servhub-store/main/install.sh
 ```bash
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 ```
+
+## How it works
+
+```
+ServHub → Flathub Servers
+```
+
+ServHub fetches app data directly from Flathub's public API with no middleman server. Installs and uninstalls are handled locally via Flatpak. Your data never leaves your machine.
 
 ## Build from Source
 
@@ -82,8 +93,7 @@ npm start
 |---|---|
 | Desktop shell | Electron |
 | Frontend | React + Vite |
-| Backend API | Node.js + Express |
-| App source | Flathub API |
+| App data | Flathub API (direct) |
 | Package manager | Flatpak |
 
 ## Contributing

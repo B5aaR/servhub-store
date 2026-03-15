@@ -10,6 +10,12 @@
   ![License](https://img.shields.io/badge/license-MIT-7c6aff?style=flat-square)
   ![AUR](https://img.shields.io/aur/version/servhub?style=flat-square&color=00e5c0)
 
+  <br/>
+
+  <img src="preview-1.png" alt="ServHub - Browse Apps" width="800" />
+  <img src="preview-2.png" alt="ServHub - App Detail" width="800" />
+  <img src="preview-3.png" alt="ServHub - Library" width="800" />
+
 </div>
 
 ---

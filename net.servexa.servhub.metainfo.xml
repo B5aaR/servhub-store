@@ -9,12 +9,12 @@
     <p>
       ServHub is a sleek, fast Linux app store that lets you browse, install,
       and manage Flatpak apps from Flathub — all from a clean, modern interface.
+      Think GNOME Software or KDE Discover, but faster and lighter.
     </p>
-    <p>Features:</p>
     <ul>
-      <li>Browse thousands of apps directly from Flathub</li>
+      <li>Browse all 3000+ apps directly from Flathub</li>
       <li>Full app detail page with screenshots and version history</li>
-      <li>Install multiple apps simultaneously with live progress</li>
+      <li>Install multiple apps simultaneously with live terminal output</li>
       <li>Update checker for all installed Flatpak apps</li>
       <li>Launch installed apps directly from ServHub</li>
       <li>Library tab showing all installed apps</li>
@@ -26,7 +26,16 @@
   <url type="bugtracker">https://github.com/B5aaR/servhub-store/issues</url>
   <screenshots>
     <screenshot type="default">
-      <caption>Main app store interface</caption>
+      <caption>Browse apps by category</caption>
+      <image>https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-1.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Full app detail page with screenshots</caption>
+      <image>https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-2.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Library of installed apps</caption>
+      <image>https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-3.png</image>
     </screenshot>
   </screenshots>
   <releases>

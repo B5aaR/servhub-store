@@ -5,12 +5,11 @@
   
   **A fast, modern Linux app store powered by Flathub**
   
-  ![Version](https://img.shields.io/badge/version-1.0.1-7c6aff?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-1.0.0-7c6aff?style=flat-square)
   ![Platform](https://img.shields.io/badge/platform-Linux-00e5c0?style=flat-square)
   ![License](https://img.shields.io/badge/license-MIT-7c6aff?style=flat-square)
   ![AUR](https://img.shields.io/aur/version/servhub?style=flat-square&color=00e5c0)
 
-  <img src="https://github.com/B5aaR/servhub-store/raw/main/preview.png" alt="ServHub Preview" width="800" />
 </div>
 
 ---
@@ -42,8 +41,8 @@ yay -S servhub
 Download the latest AppImage from [Releases](https://github.com/B5aaR/servhub-store/releases) then:
 
 ```bash
-chmod +x ServHub-1.0.1.AppImage
-./ServHub-1.0.1.AppImage
+chmod +x ServHub-1.0.0.AppImage
+./ServHub-1.0.0.AppImage
 ```
 
 ### Quick install script
@@ -67,16 +66,13 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 git clone https://github.com/B5aaR/servhub-store.git
 cd servhub-store
 
-# Install root dependencies
 npm install
 
-# Build the frontend
 cd frontend
 npm install
 npm run build
 cd ..
 
-# Start ServHub
 npm start
 ```
 

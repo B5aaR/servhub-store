@@ -30,27 +30,31 @@ const NAV = [
 ];
 
 const ALL = NAV.flatMap(s => s.items);
+const PAGE_SIZE = 50;
 
 export default function App() {
     const [apps, setApps]           = useState([]);
     const [loading, setLoading]     = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [query, setQuery]         = useState('');
     const [activeId, setActiveId]   = useState('all');
     const [total, setTotal]         = useState(0);
+    const [page, setPage]           = useState(1);
     const [libCount, setLibCount]   = useState(0);
     const [queue, setQueue]         = useState({});
     const [drawer, setDrawer]       = useState(false);
     const timer = useRef(null);
 
-    const active   = ALL.find(i => i.id === activeId) || ALL[2];
-    const isLib    = !!active.isLibrary;
-    const qActive  = Object.values(queue).filter(e => e.status === 'installing' || e.status === 'uninstalling').length;
+    const active  = ALL.find(i => i.id === activeId) || ALL[2];
+    const isLib   = !!active.isLibrary;
+    const qActive = Object.values(queue).filter(e => e.status === 'installing' || e.status === 'uninstalling').length;
+    const hasMore = !isLib && !query && !active.section && apps.length < total;
 
     useEffect(() => {
-        onInstallLog(({ appId, line }) => {
-            setQueue(q => q[appId] ? { ...q, [appId]: { ...q[appId], logs: [...q[appId].logs, line.trimEnd()] } } : q);
-        });
-        onInstallDone(({ appId, name, success, message }) => {
+        onInstallLog(({ appId, line }) =>
+        setQueue(q => q[appId] ? { ...q, [appId]: { ...q[appId], logs: [...q[appId].logs, line.trimEnd()] } } : q)
+        );
+        onInstallDone(({ appId, success, message }) => {
             setQueue(q => ({ ...q, [appId]: { ...q[appId], status: success ? 'done' : 'error', message } }));
             if (success) setLibCount(c => c + 1);
         });
@@ -64,21 +68,13 @@ export default function App() {
             return removeListeners;
     }, []);
 
-    const install = useCallback((appId, name) => {
-        setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } }));
-        setDrawer(true);
-        startInstall(appId, name);
-    }, []);
-
-    const uninstall = useCallback((appId, name) => {
-        setQueue(q => ({ ...q, [appId]: { appId, name, status: 'uninstalling', logs: [] } }));
-        setDrawer(true);
-        startUninstall(appId, name);
-    }, []);
+    const install   = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } })); setDrawer(true); startInstall(appId, name); }, []);
+    const uninstall = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'uninstalling', logs: [] } })); setDrawer(true); startUninstall(appId, name); }, []);
 
     const loadNav = useCallback(async item => {
         setLoading(true);
         setApps([]);
+        setPage(1);
         try {
             if (item.isLibrary) {
                 const list = await getInstalledApps();
@@ -88,13 +84,27 @@ export default function App() {
                 setLibCount(marked.length);
                 return;
             }
-            const data = await fetchApps({ category: item.category ?? '', section: item.section ?? '' });
+            const data = await fetchApps({ category: item.category ?? '', section: item.section ?? '', hitsPerPage: PAGE_SIZE, page: 1 });
             const list = Array.isArray(data) ? data : (data.hits || []);
             setApps(list);
             setTotal(data.estimatedTotalHits ?? list.length);
         } catch { setApps([]); }
         finally { setLoading(false); }
     }, []);
+
+    const loadMore = useCallback(async () => {
+        if (loadingMore || !hasMore) return;
+        const nextPage = page + 1;
+        setLoadingMore(true);
+        try {
+            const data = await fetchApps({ category: active.category ?? '', section: active.section ?? '', hitsPerPage: PAGE_SIZE, page: nextPage });
+            const list = Array.isArray(data) ? data : (data.hits || []);
+            setApps(prev => [...prev, ...list]);
+            setPage(nextPage);
+            setTotal(data.estimatedTotalHits ?? (apps.length + list.length));
+        } catch {}
+        finally { setLoadingMore(false); }
+    }, [loadingMore, hasMore, page, active, apps.length]);
 
     useEffect(() => {
         loadNav(active);
@@ -132,7 +142,8 @@ export default function App() {
     const sub = isLib
     ? `${shown.length} installed app${shown.length !== 1 ? 's' : ''}`
     : query ? `${shown.length} result${shown.length !== 1 ? 's' : ''} for "${query}"`
-    : loading ? 'Loading…' : `${total.toLocaleString()} apps`;
+    : loading ? 'Loading…'
+    : `${shown.length.toLocaleString()} of ${total.toLocaleString()} apps`;
 
     return (
         <div className="layout">
@@ -188,7 +199,11 @@ export default function App() {
         )}
 
         <main className="content">
-        <AppGrid apps={shown} isLoading={loading} isLibrary={isLib} queue={queue} onInstall={install} onUninstall={uninstall} />
+        <AppGrid
+        apps={shown} isLoading={loading} isLibrary={isLib}
+        queue={queue} onInstall={install} onUninstall={uninstall}
+        hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore}
+        />
         </main>
         </div>
 

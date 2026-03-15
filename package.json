@@ -1,6 +1,6 @@
 {
   "name": "servhub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ServHub — Linux App Store",
   "main": "main.js",
   "scripts": {
@@ -13,12 +13,15 @@
     "icon": "icon.png",
     "files": [
       "main.js",
+      "icon.png",
       "frontend/dist/**/*",
+      "backend/**/*",
       "package.json"
     ],
     "linux": {
       "category": "System",
-      "description": "ServHub — Linux App Store"
+      "description": "ServHub — Linux App Store",
+      "target": ["AppImage"]
     }
   },
   "devDependencies": {

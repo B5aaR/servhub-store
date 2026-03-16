@@ -5,7 +5,7 @@
   
   **A fast, modern Linux app store powered by Flathub**
   
-  ![Version](https://img.shields.io/badge/version-1.0.4-7c6aff?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-1.0.5-7c6aff?style=flat-square)
   ![Platform](https://img.shields.io/badge/platform-Linux-00e5c0?style=flat-square)
   ![License](https://img.shields.io/badge/license-MIT-7c6aff?style=flat-square)
   ![AUR](https://img.shields.io/aur/version/servhub?style=flat-square&color=00e5c0)
@@ -65,8 +65,8 @@ yay -S servhub
 Download the latest AppImage from [Releases](https://github.com/B5aaR/servhub-store/releases) then:
 
 ```bash
-chmod +x ServHub-1.0.4.AppImage
-./ServHub-1.0.4.AppImage
+chmod +x ServHub-1.0.5.AppImage
+./ServHub-1.0.5.AppImage
 ```
 
 ### Quick install script

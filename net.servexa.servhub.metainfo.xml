@@ -39,6 +39,17 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.0.5" date="2026-03-16">
+      <description>
+        <ul>
+          <li>Critical security update: Implemented strict sandboxing and context isolation for the frontend</li>
+          <li>Added support for detecting and managing system-wide Flatpak installations</li>
+          <li>Fixed a bug where users with massive app libraries could experience crashes</li>
+          <li>Added network timeouts to prevent the app from hanging during connection drops</li>
+          <li>Added visual error feedback if an installed application fails to launch</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.4" date="2026-03-15">
       <description>
         <ul>

@@ -151,7 +151,7 @@ cached(`detail:${appId}`, () => httpsGet(`${FLATHUB}/appstream/${appId}`))
 
 ipcMain.handle('check-updates', async () => {
     return new Promise(resolve => {
-        exec('flatpak remote-ls --updates --app --columns=application,version', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
+        exec('flatpak-spawn --host flatpak remote-ls --updates --app --columns=application,version', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
             if (!stdout?.trim()) return resolve([]);
             const updates = stdout.trim().split('\n').filter(Boolean).map(line => {
                 const [app_id, version] = line.split('\t').map(s => s?.trim() || '');
@@ -165,19 +165,19 @@ ipcMain.handle('check-updates', async () => {
 ipcMain.on('update-app', (e, { appId, name }) => {
     const safe = sanitize(appId);
     if (!safe) return e.sender.send('install-done', { appId, success: false, message: `Invalid ID` });
-    spawnFlatpak(e, ['update', '--user', '-y', safe], appId, name, 'install-done');
+    spawnFlatpak(e, ['--host', 'flatpak', 'update', '-y', safe], appId, name, 'install-done');
 });
 
 ipcMain.on('launch-app', (e, appId) => {
     const safe = sanitize(appId);
     if (!safe) return;
-    exec(`flatpak run ${safe}`, { timeout: 10000 }, (err) => {
+    exec(`flatpak-spawn --host flatpak run ${safe}`, { timeout: 10000 }, (err) => {
         if (err) e.sender.send('launch-error', { appId, message: err.message });
     });
 });
 
 function spawnFlatpak(e, args, appId, name, doneEvent) {
-    const proc = spawn('flatpak', args);
+    const proc = spawn('flatpak-spawn', args);
     proc.stdout.on('data', d => e.sender.send('install-log', { appId, line: d.toString() }));
     proc.stderr.on('data', d => e.sender.send('install-log', { appId, line: d.toString() }));
     proc.on('close', code => {
@@ -190,24 +190,24 @@ function spawnFlatpak(e, args, appId, name, doneEvent) {
 ipcMain.on('install-app', (e, { appId, name }) => {
     const safe = sanitize(appId);
     if (!safe) return e.sender.send('install-done', { appId, success: false, message: `Invalid ID: "${appId}"` });
-    spawnFlatpak(e, ['install', '--user', '-y', 'flathub', safe], appId, name, 'install-done');
+    spawnFlatpak(e, ['--host', 'flatpak', 'install', '-y', 'flathub', safe], appId, name, 'install-done');
 });
 
 ipcMain.on('uninstall-app', (e, { appId, name }) => {
     const safe = sanitize(appId);
     if (!safe) return e.sender.send('uninstall-done', { appId, success: false, message: `Invalid ID: "${appId}"` });
-    spawnFlatpak(e, ['uninstall', '--user', '-y', safe], appId, name, 'uninstall-done');
+    spawnFlatpak(e, ['--host', 'flatpak', 'uninstall', '-y', safe], appId, name, 'uninstall-done');
 });
 
 ipcMain.on('check-installed-batch', (e, appIds) => {
-    exec('flatpak list --app --columns=application', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
+    exec('flatpak-spawn --host flatpak list --app --columns=application', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
         const ids = (stdout || '').split('\n').map(s => s.trim()).filter(Boolean);
         e.reply('check-installed-batch-reply', { installed: ids.filter(id => appIds.includes(id)) });
     });
 });
 
 ipcMain.on('get-installed-apps', (e) => {
-    exec('flatpak list --app --columns=application,name,version,branch,origin', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
+    exec('flatpak-spawn --host flatpak list --app --columns=application,name,version,branch,origin', { maxBuffer: 10 * 1024 * 1024 }, (_err, stdout) => {
         if (!stdout?.trim()) return e.reply('get-installed-apps-reply', { apps: [] });
         const apps = stdout.trim().split('\n').filter(Boolean).map(line => {
             const [app_id, name, version, branch, origin] = line.split('\t').map(s => s?.trim() || '');

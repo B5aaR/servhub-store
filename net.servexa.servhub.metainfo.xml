@@ -3,13 +3,19 @@
   <id>net.servexa.servhub</id>
   <name>ServHub</name>
   <summary>A fast Linux app store powered by Flathub</summary>
+
+  <developer_name>Abdulrahman AlAli (B5aaR)</developer_name>
+  <developer id="net.servexa">
+    <name>Abdulrahman AlAli</name>
+  </developer>
+
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
+
   <description>
     <p>
       ServHub is a sleek, fast Linux app store that lets you browse, install,
       and manage Flatpak apps from Flathub — all from a clean, modern interface.
-      Think GNOME Software or KDE Discover, but faster and lighter.
     </p>
     <ul>
       <li>Browse all 3000+ apps directly from Flathub</li>
@@ -21,9 +27,11 @@
       <li>Live search across all Flathub categories</li>
     </ul>
   </description>
+
   <launchable type="desktop-id">net.servexa.servhub.desktop</launchable>
   <url type="homepage">https://github.com/B5aaR/servhub-store</url>
   <url type="bugtracker">https://github.com/B5aaR/servhub-store/issues</url>
+
   <screenshots>
     <screenshot type="default">
       <caption>Browse apps by category</caption>
@@ -38,6 +46,7 @@
       <image>https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-3.png</image>
     </screenshot>
   </screenshots>
+
   <releases>
     <release version="1.0.5" date="2026-03-16">
       <description>
@@ -61,5 +70,6 @@
       </description>
     </release>
   </releases>
+
   <content_rating type="oars-1.1"/>
 </component>

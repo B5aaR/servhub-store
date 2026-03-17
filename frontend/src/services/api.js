@@ -1,10 +1,10 @@
 const s = () => window.servhub;
 
-export const fetchApps     = (p = {})  => s().fetchApps(p);
+export const fetchApps     = (p = {}) => s().fetchApps(p);
 export const searchApps    = (q, opts) => s().searchApps({ query: q, ...opts });
-export const getAppDetails = (id)      => s().getAppDetails(id);
-export const checkUpdates  = ()        => s().checkUpdates();
-export const launchApp     = (id)      => s().launchApp(id);
+export const getAppDetails = (id)     => s().getAppDetails(id);
+export const checkUpdates  = ()       => s().checkUpdates();
+export const launchApp     = (id)     => s().launchApp(id);
 
 export const checkInstalledBatch = (ids) => new Promise(resolve => {
     if (!ids?.length) return resolve(new Set());
@@ -17,7 +17,7 @@ export const getInstalledApps = () => new Promise((resolve, reject) => {
     s().getInstalledApps();
 });
 
-export const startInstall   = (appId, name) => s().installApp({ appId, name });
+export const startInstall   = (appId, name, scope = 'user') => s().installApp({ appId, name, scope });
 export const startUninstall = (appId, name) => s().uninstallApp({ appId, name });
 export const startUpdate    = (appId, name) => s().updateApp({ appId, name });
 

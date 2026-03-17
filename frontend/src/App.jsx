@@ -34,6 +34,40 @@ const NAV = [
 const ALL = NAV.flatMap(s => s.items);
 const PAGE_SIZE = 50;
 
+function ScopeDialog({ app, onConfirm, onCancel }) {
+    return (
+        <div className="scope-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
+        <div className="scope-dialog">
+        <div className="scope-icon">
+        {app.icon_url || app.icon
+            ? <img src={app.icon_url || app.icon} alt={app.name} width="48" height="48" style={{ borderRadius: 12 }} />
+            : <div style={{ width:48, height:48, borderRadius:12, background:'linear-gradient(135deg,#1e1e38,#2a2a50)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--font-head)', fontSize:18, fontWeight:700, color:'var(--accent)' }}>{(app.name||'?').slice(0,2).toUpperCase()}</div>
+        }
+        </div>
+        <h2 className="scope-title">Install {app.name}</h2>
+        <p className="scope-sub">Choose where to install this app</p>
+        <div className="scope-options">
+        <button className="scope-btn" onClick={() => onConfirm('user')}>
+        <div className="scope-btn-icon"><UserIcon /></div>
+        <div>
+        <div className="scope-btn-label">User install</div>
+        <div className="scope-btn-desc">Only for you · No password needed</div>
+        </div>
+        </button>
+        <button className="scope-btn" onClick={() => onConfirm('system')}>
+        <div className="scope-btn-icon"><SystemIcon /></div>
+        <div>
+        <div className="scope-btn-label">System install</div>
+        <div className="scope-btn-desc">All users · Requires password</div>
+        </div>
+        </button>
+        </div>
+        <button className="scope-cancel" onClick={onCancel}>Cancel</button>
+        </div>
+        </div>
+    );
+}
+
 export default function App() {
     const [apps, setApps]               = useState([]);
     const [loading, setLoading]         = useState(true);
@@ -48,6 +82,7 @@ export default function App() {
     const [drawer, setDrawer]           = useState(false);
     const [detail, setDetail]           = useState(null);
     const [installedSet, setInstalledSet] = useState(new Set());
+    const [scopePending, setScopePending]   = useState(null);
     const timer = useRef(null);
 
     const active    = ALL.find(i => i.id === activeId) || ALL[2];
@@ -76,23 +111,33 @@ export default function App() {
         return removeListeners;
     }, []);
 
-    const install   = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } })); setDrawer(true); startInstall(appId, name); }, []);
-    const uninstall = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'uninstalling', logs: [] } })); setDrawer(true); startUninstall(appId, name); }, []);
-    const update    = useCallback((appId, name) => { setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } })); setDrawer(true); startUpdate(appId, name); }, []);
+    const doInstall = useCallback((appId, name, scope = 'user') => {
+        setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } }));
+        setDrawer(true);
+        startInstall(appId, name, scope);
+    }, []);
 
-    const loadPage = useCallback(async (item, pageNum, currentApps) => {
-        const data = await fetchApps({
-            category: item.category ?? '',
-            section:  item.section  ?? '',
-            hitsPerPage: PAGE_SIZE,
-            page: pageNum,
-        });
+
+    const install = useCallback((appId, name, appObj) => {
+        setScopePending({ appId, name, app: appObj || { app_id: appId, name } });
+    }, []);
+
+    const uninstall = useCallback((appId, name) => {
+        setQueue(q => ({ ...q, [appId]: { appId, name, status: 'uninstalling', logs: [] } }));
+        setDrawer(true);
+        startUninstall(appId, name);
+    }, []);
+
+    const update = useCallback((appId, name) => {
+        setQueue(q => ({ ...q, [appId]: { appId, name, status: 'installing', logs: [] } }));
+        setDrawer(true);
+        startUpdate(appId, name);
+    }, []);
+
+    const loadPage = useCallback(async (item, pageNum) => {
+        const data = await fetchApps({ category: item.category ?? '', section: item.section ?? '', hitsPerPage: PAGE_SIZE, page: pageNum });
         const list = Array.isArray(data) ? data : (data.hits || []);
-        if (pageNum === 1) {
-            setApps(list);
-        } else {
-            setApps(prev => [...prev, ...list]);
-        }
+        if (pageNum === 1) setApps(list); else setApps(prev => [...prev, ...list]);
         setPage(pageNum);
         setTotal(data.estimatedTotalHits ?? list.length);
         return list;
@@ -106,9 +151,7 @@ export default function App() {
             if (item.isLibrary) {
                 const list = await getInstalledApps();
                 const marked = list.map(a => ({ ...a, installed: true }));
-                setApps(marked);
-                setTotal(marked.length);
-                setLibCount(marked.length);
+                setApps(marked); setTotal(marked.length); setLibCount(marked.length);
                 return;
             }
             if (item.isUpdates) {
@@ -139,9 +182,7 @@ export default function App() {
 
     const handleNav = item => {
         if (item.id === activeId && !query) return;
-        setQuery('');
-        setActiveId(item.id);
-        loadNav(item);
+        setQuery(''); setActiveId(item.id); loadNav(item);
     };
 
     const handleSearch = val => {
@@ -154,8 +195,7 @@ export default function App() {
             try {
                 const data = await searchApps(val, { category: active.category ?? '' });
                 const list = Array.isArray(data) ? data : (data.hits || []);
-                setApps(list);
-                setTotal(data.estimatedTotalHits ?? list.length);
+                setApps(list); setTotal(data.estimatedTotalHits ?? list.length);
             } catch {}
             finally { setLoading(false); }
         }, 300);
@@ -234,7 +274,7 @@ export default function App() {
             </div>
             <div style={{ flex:1 }}>
             <h3>{updates.length} update{updates.length !== 1 ? 's' : ''} available</h3>
-            <p>Click an app to update, or update all at once.</p>
+            <p>Flatpak app updates ready to install.</p>
             </div>
             <button className="btn btn-install" style={{ background:'rgba(255,180,0,.15)', color:'#ffb400', border:'1px solid rgba(255,180,0,.3)' }}
             onClick={() => updates.forEach(u => update(u.app_id, u.name || u.app_id))}>
@@ -246,20 +286,34 @@ export default function App() {
         <main className="content">
         <AppGrid
         apps={shown} isLoading={loading} isLibrary={isLib || isUpdates}
-        queue={queue} onInstall={isUpdates ? update : install} onUninstall={uninstall}
+        queue={queue}
+        onInstall={isUpdates ? update : (appId, name, app) => install(appId, name, app)}
+        onUninstall={uninstall}
         onOpen={setDetail}
         hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore}
         />
         </main>
         </div>
 
+        {scopePending && (
+            <ScopeDialog
+            app={scopePending.app}
+            onConfirm={scope => {
+                doInstall(scopePending.appId, scopePending.name, scope);
+                setScopePending(null);
+            }}
+            onCancel={() => setScopePending(null)}
+            />
+        )}
+
         {detail && (
             <AppDetail
             app={detail}
             isInstalled={installedSet.has((detail.app_id || detail.id || '').replace(/_/g, '.')) || !!detail.installed}
             queue={queue}
-            onInstall={install}
+            onInstall={(appId, name) => install(appId, name, detail)}
             onUninstall={uninstall}
+            onUpdate={update}
             onBack={() => setDetail(null)}
             />
         )}
@@ -289,3 +343,5 @@ function UpdateIcon({ size = 15, color = 'currentColor' }) {
 function LibraryIcon({ size = 15, color = 'currentColor' }) {
     return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>;
 }
+function UserIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>; }
+function SystemIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>; }

@@ -38,7 +38,7 @@ function RichText({ html, className }) {
     return <p className={className}>{html}</p>;
 }
 
-export default function AppDetail({ app, isInstalled, queue = {}, onInstall, onUninstall, onBack }) {
+export default function AppDetail({ app, isInstalled, queue = {}, onInstall, onUninstall, onUpdate, onBack }) {
     const [detail, setDetail]     = useState(null);
     const [loading, setLoading]   = useState(true);
     const [imgErr, setImgErr]     = useState(false);
@@ -119,6 +119,11 @@ export default function AppDetail({ app, isInstalled, queue = {}, onInstall, onU
             <button className="btn btn-launch" onClick={() => launchApp(appId)}>
             <LaunchIcon/>{launchErr ? 'Failed to launch' : 'Launch'}
             </button>
+            {app.hasUpdate && onUpdate && (
+                <button className="btn btn-update" onClick={() => onUpdate?.(appId, name, app.type)}>
+                <UpdateIcon/>Update
+                </button>
+            )}
             <button className="btn btn-remove" onClick={() => onUninstall?.(appId, name)}>
             <TrashIcon/>Uninstall
             </button>
@@ -251,6 +256,7 @@ export default function AppDetail({ app, isInstalled, queue = {}, onInstall, onU
     );
 }
 
+const UpdateIcon = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
 const ZoomIcon   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>;
 const DlIcon     = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 const TrashIcon  = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>;

@@ -5,7 +5,7 @@
   
   **A fast, modern Linux app store powered by Flathub**
   
-  ![Version](https://img.shields.io/badge/version-1.0.7-7c6aff?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-1.0.8-7c6aff?style=flat-square)
   ![Platform](https://img.shields.io/badge/platform-Linux-00e5c0?style=flat-square)
   ![License](https://img.shields.io/badge/license-MIT-7c6aff?style=flat-square)
   ![AUR](https://img.shields.io/aur/version/servhub?style=flat-square&color=00e5c0)
@@ -56,10 +56,18 @@ ServHub talks directly to Flathub's servers — no middleman, no backend, comple
 
 ## Install
 
-### Arch Linux / Manjaro / EndeavourOS / CachyOS /Debian
+### Arch Linux / Manjaro / EndeavourOS / CachyOS
 
 ```bash
 yay -S servhub
+```
+
+### Debian / Ubuntu / Linux Mint
+
+```bash
+curl -fsSL https://apt.servexa.net/servhub.gpg | sudo gpg --dearmor -o /usr/share/keyrings/servhub.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/servhub.gpg] https://apt.servexa.net stable main" | sudo tee /etc/apt/sources.list.d/servhub.list
+sudo apt update && sudo apt install servhub
 ```
 
 ### AppImage (any distro)
@@ -67,11 +75,11 @@ yay -S servhub
 Download the latest AppImage from [Releases](https://github.com/B5aaR/servhub-store/releases) then:
 
 ```bash
-chmod +x ServHub-1.0.7.AppImage
-./ServHub-1.0.7.AppImage
+chmod +x ServHub-1.0.8.AppImage
+./ServHub-1.0.8.AppImage
 ```
 
-### Quick install script
+### Universal install script
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/B5aaR/servhub-store/main/install.sh | bash

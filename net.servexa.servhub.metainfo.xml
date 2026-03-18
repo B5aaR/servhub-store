@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>net.servexa.servhub</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
   <name>ServHub</name>
   <summary>A fast Linux app store powered by Flathub</summary>
 
@@ -8,9 +10,6 @@
   <developer id="net.servexa">
     <name>Abdulrahman AlAli</name>
   </developer>
-
-  <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT</project_license>
 
   <description>
     <p>
@@ -29,21 +28,27 @@
   </description>
 
   <launchable type="desktop-id">net.servexa.servhub.desktop</launchable>
+
+  <provides>
+    <binary>servhub</binary>
+  </provides>
+
   <url type="homepage">https://github.com/B5aaR/servhub-store</url>
   <url type="bugtracker">https://github.com/B5aaR/servhub-store/issues</url>
+  <url type="vcs-browser">https://github.com/B5aaR/servhub-store</url>
 
   <screenshots>
     <screenshot type="default">
       <caption>Browse apps by category</caption>
-      <image>https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-1.png</image>
+      <image type="source">https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-1.png</image>
     </screenshot>
     <screenshot>
       <caption>Full app detail page with screenshots</caption>
-      <image>https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-2.png</image>
+      <image type="source">https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-2.png</image>
     </screenshot>
     <screenshot>
       <caption>Library of installed apps</caption>
-      <image>https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-3.png</image>
+      <image type="source">https://raw.githubusercontent.com/B5aaR/servhub-store/main/preview-3.png</image>
     </screenshot>
   </screenshots>
 
@@ -51,11 +56,11 @@
     <release version="1.0.5" date="2026-03-16">
       <description>
         <ul>
-          <li>Critical security update: Implemented strict sandboxing and context isolation for the frontend</li>
-          <li>Added support for detecting and managing system-wide Flatpak installations</li>
-          <li>Fixed a bug where users with massive app libraries could experience crashes</li>
-          <li>Added network timeouts to prevent the app from hanging during connection drops</li>
-          <li>Added visual error feedback if an installed application fails to launch</li>
+          <li>Critical security update: Implemented strict sandboxing and context isolation</li>
+          <li>Added support for detecting system-wide Flatpak installations</li>
+          <li>Fixed a bug causing crashes with large app libraries</li>
+          <li>Added network timeouts to prevent hanging during connection drops</li>
+          <li>Added visual error feedback for failed application launches</li>
         </ul>
       </description>
     </release>
@@ -71,5 +76,11 @@
     </release>
   </releases>
 
-  <content_rating type="oars-1.1"/>
+  <content_rating type="oars-1.1" />
+
+  <tags>
+    <tag>Flatpak</tag>
+    <tag>Store</tag>
+    <tag>Package Manager</tag>
+  </tags>
 </component>

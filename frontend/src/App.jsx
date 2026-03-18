@@ -67,7 +67,66 @@ function ScopeDialog({ app, onConfirm, onCancel }) {
         </div>
     );
 }
+function ThemeSwitcher({ currentTheme, onChange }) {
+    const themes = [
+        { id: 'dark', label: 'Dark', color: '#141422', border: '#7c6aff' },
+        { id: 'light', label: 'Light', color: '#f8f7fd', border: '#5546d0' },
+        { id: 'greeny', label: 'Greeny', color: '#091410', border: '#38d872' },
+        { id: 'sakura', label: 'Sakura', color: '#0a080f', border: '#ff85b3' },
+        { id: 'latte', label: 'Latte', color: '#e6e2d8', border: '#b08968' },
+        { id: 'ocean', label: 'Ocean', color: '#0b1a2a', border: '#4aa3ff' },
+        { id: 'sunset', label: 'Sunset', color: '#2b1b1e', border: '#ff7b5c' },
+        { id: 'espresso', label: 'Espresso', color: '#1a1412', border: '#e6b478' },
+    ];
 
+    return (
+        <div style={{ padding: '0 20px 20px 20px', marginTop: 'auto' }}>
+        <div className="sidebar-label" style={{ marginBottom: '12px' }}>Theme</div>
+        <div style={{
+            display: 'flex',
+            gap: '12px',
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+        }}>
+        {themes.map(t => (
+            <button
+            key={t.id}
+            onClick={() => onChange(t.id)}
+            title={t.label}
+            style={{
+                width: 32,
+                height: 32,
+                borderRadius: '12px',
+                cursor: 'pointer',
+                background: t.color,
+                border: currentTheme === t.id
+                ? `3px solid ${t.border}`
+                : '2px solid rgba(150,150,150,0.2)',
+                          transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
+                          boxShadow: currentTheme === t.id
+                          ? `0 4px 12px ${t.border}80`
+                          : '0 2px 6px rgba(0,0,0,0.1)',
+                          transform: currentTheme === t.id ? 'scale(1.1)' : 'scale(1)',
+                          outline: 'none',
+            }}
+            onMouseEnter={(e) => {
+                if (currentTheme !== t.id) {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.borderColor = t.border;
+                }
+            }}
+            onMouseLeave={(e) => {
+                if (currentTheme !== t.id) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.border = '2px solid rgba(150,150,150,0.2)';
+                }
+            }}
+            />
+        ))}
+        </div>
+        </div>
+    );
+}
 export default function App() {
     const [apps, setApps]               = useState([]);
     const [loading, setLoading]         = useState(true);
@@ -84,7 +143,12 @@ export default function App() {
     const [installedSet, setInstalledSet] = useState(new Set());
     const [scopePending, setScopePending]   = useState(null);
     const timer = useRef(null);
+    const [theme, setTheme] = useState(localStorage.getItem('servhub-theme') || 'dark');
 
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('servhub-theme', theme);
+    }, [theme]);
     const active    = ALL.find(i => i.id === activeId) || ALL[2];
     const isLib     = !!active.isLibrary;
     const isUpdates = !!active.isUpdates;
@@ -234,6 +298,7 @@ export default function App() {
             <div className="sidebar-hr" />
             </React.Fragment>
         ))}
+        <ThemeSwitcher currentTheme={theme} onChange={setTheme} />
         <div className="sidebar-footer">
         Powered by Flathub<br />
         <span style={{ color: '#2a2a48' }}>ServHub v1.0</span>
@@ -323,25 +388,124 @@ export default function App() {
     );
 }
 
-function HomeIcon()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>; }
-function SparkleIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>; }
-function TrendIcon()   { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>; }
-function GridIcon()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>; }
-function CodeIcon()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>; }
-function GameIcon()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="11" r="1"/><circle cx="17" cy="13" r="1"/><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/></svg>; }
-function ToolIcon()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>; }
-function DocIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>; }
-function ArtIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>; }
-function SciIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>; }
-function EduIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>; }
-function NetIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>; }
-function MediaIcon()   { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>; }
-function SysIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>; }
-function UpdateIcon({ size = 15, color = 'currentColor' }) {
-    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
+function HomeIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 3L4 9v10.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V9L12 3z" fill="#3B82F6"/>
+    <path d="M15 21v-7h-6v7h6z" fill="#93C5FD"/>
+    </svg>;
 }
-function LibraryIcon({ size = 15, color = 'currentColor' }) {
-    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>;
+function SparkleIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z" fill="#F59E0B"/>
+    <path d="M19 8l1.5 3.5L24 13l-3.5 1.5L19 18l-1.5-3.5L14 13l3.5-1.5L19 8z" fill="#FCD34D"/>
+    </svg>;
 }
-function UserIcon()   { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>; }
-function SystemIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>; }
+function TrendIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 21a9 9 0 0 0 9-9c0-5-4-9-5-10 0 3-2 5-4 5-2 0-3-1.5-3-3-2 2.5-6 6-6 10a9 9 0 0 0 9 7z" fill="#EF4444"/>
+    <path d="M12 21a5 5 0 0 0 5-5c0-3-2-5-3-6 0 2-1 3-2 3s-2-1-2-2c-1 1.5-3 3-3 5a5 5 0 0 0 5 5z" fill="#FCA5A5"/>
+    </svg>;
+}
+function LibraryIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="4" width="18" height="16" rx="2" fill="#8B5CF6"/>
+    <path d="M3 8h18v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" fill="#A78BFA"/>
+    <rect x="8" y="10" width="8" height="3" rx="1.5" fill="#DDD6FE"/>
+    </svg>;
+}
+function UpdateIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="#10B981"/>
+    <path d="M12 2l4 4-4 4V2z" fill="#A7F3D0"/>
+    </svg>;
+}
+function GridIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="4" y="4" width="7" height="7" rx="2" fill="#6366F1"/>
+    <rect x="13" y="4" width="7" height="7" rx="2" fill="#818CF8"/>
+    <rect x="4" y="13" width="7" height="7" rx="2" fill="#818CF8"/>
+    <rect x="13" y="13" width="7" height="7" rx="2" fill="#A5B4FC"/>
+    </svg>;
+}
+function GameIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="2" y="6" width="20" height="12" rx="6" fill="#A855F7"/>
+    <circle cx="16" cy="10" r="1.5" fill="#E9D5FF"/>
+    <circle cx="18" cy="12" r="1.5" fill="#E9D5FF"/>
+    <circle cx="14" cy="12" r="1.5" fill="#E9D5FF"/>
+    <circle cx="16" cy="14" r="1.5" fill="#E9D5FF"/>
+    <path d="M6 11h4v2H6v-2zM8 9v6H6V9h2z" fill="#E9D5FF"/>
+    </svg>;
+}
+function CodeIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="5" width="18" height="14" rx="3" fill="#334155"/>
+    <path d="M7 10l-2 2 2 2" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round"/>
+    <path d="M11 14h4" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>;
+}
+function ToolIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="#14B8A6"/>
+    <circle cx="18" cy="6" r="2.5" fill="#99F6E4"/>
+    </svg>;
+}
+function ArtIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10c0 1.25-.8 2.25-1.78 2.25-.66 0-1.28-.27-1.73-.74-.46-.47-1.1-1.15-2.09-.9a2.38 2.38 0 0 0-1.7 1.83C14.39 21.1 13.25 22 12 22z" fill="#EC4899"/>
+    <circle cx="7.5" cy="10.5" r="1.5" fill="#FBCFE8"/>
+    <circle cx="10.5" cy="6.5" r="1.5" fill="#FBCFE8"/>
+    <circle cx="15.5" cy="8.5" r="1.5" fill="#FBCFE8"/>
+    </svg>;
+}
+function DocIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="5" y="3" width="14" height="18" rx="2" fill="#0EA5E9"/>
+    <path d="M9 8h6M9 12h6M9 16h4" stroke="#BAE6FD" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>;
+}
+function MediaIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="2" y="5" width="20" height="14" rx="3" fill="#F43F5E"/>
+    <path d="M10 9l5 3-5 3V9z" fill="#FECDD3"/>
+    </svg>;
+}
+function NetIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" fill="#06B6D4"/>
+    <path d="M2 12h20" stroke="#CFFAFE" strokeWidth="2"/>
+    <ellipse cx="12" cy="12" rx="4" ry="10" stroke="#CFFAFE" strokeWidth="2"/>
+    </svg>;
+}
+function EduIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 3l10 6-10 6L2 9l10-6z" fill="#D946EF"/>
+    <path d="M6 11.4v4.2c0 1.5 2.7 3.4 6 3.4s6-1.9 6-3.4v-4.2L12 15l-6-3.6z" fill="#F0ABFC"/>
+    </svg>;
+}
+function SciIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M10 5l-5 14a2 2 0 0 0 1.8 2.8h10.4A2 2 0 0 0 19 19L14 5h-4z" fill="#0EA5E9"/>
+    <path d="M7 14h10v5a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-5z" fill="#7DD3FC"/>
+    <path d="M9 2h6v3H9V2z" fill="#38BDF8"/>
+    </svg>;
+}
+function SysIcon({ size = 15 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="5" y="5" width="14" height="14" rx="2" fill="#64748B"/>
+    <rect x="9" y="9" width="6" height="6" rx="1" fill="#E2E8F0"/>
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>;
+}function UserIcon({ size = 18 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="7" r="5" fill="#8B5CF6"/>
+    <path d="M4 21c0-4.5 4-7 8-7s8 2.5 8 7" fill="#C4B5FD"/>
+    </svg>;
+}
+
+function SystemIcon({ size = 18 }) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="2" y="4" width="20" height="12" rx="2" fill="#3B82F6"/>
+    <path d="M8 20h8M12 16v4" stroke="#93C5FD" strokeWidth="3" strokeLinecap="round"/>
+    </svg>;
+}

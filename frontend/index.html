@@ -25,6 +25,123 @@
       --font-head: 'Syne', sans-serif;
       --font-body: 'Manrope', sans-serif;
     }
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LIGHT — Lavender-kissed paper, crisp & airy
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    [data-theme="light"] {
+      --bg: #edecf5;
+      --surface: #f8f7fd;
+      --card: #ffffff;
+      --card-hover: #f2f1fb;
+      --border: rgba(86, 72, 200, 0.12);
+      --border-subtle: rgba(86, 72, 200, 0.06);
+      --accent: #5546d0;
+      --accent2: #00b8a2;
+      --text: #111020;
+      --text-dim: #44435e;
+      --text-muted: #9290b4;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       GREENY — Deep rainforest, bioluminescent glow
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    [data-theme="greeny"] {
+      --bg: #091410;
+      --surface: #0e1e16;
+      --card: #15291e;
+      --card-hover: #1c3628;
+      --border: rgba(50, 215, 100, 0.18);
+      --border-subtle: rgba(50, 215, 100, 0.07);
+      --accent: #38d872;
+      --accent2: #18c97a;
+      --text: #e6fdf0;
+      --text-dim: #7ecfa0;
+      --text-muted: #3d7a58;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SAKURA — Midnight cherry blossom, ink & petal
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    [data-theme="sakura"] {
+      --bg: #0a080f;
+      --surface: #110d18;
+      --card: #19112a;
+      --card-hover: #221638;
+      --border: rgba(255, 160, 190, 0.16);
+      --border-subtle: rgba(255, 160, 190, 0.06);
+      --accent: #ff85b3;
+      --accent2: #e06adc;
+      --text: #fff0f8;
+      --text-dim: #d48aaa;
+      --text-muted: #6e3d66;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LATTE — Soft oat & caramel, zero pure white ☕
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    [data-theme="latte"] {
+      --bg: #e6e2d8;         /* Deeper creamy background */
+      --surface: #dcd7cc;    /* Slightly darker for the sidebar */
+      --card: #eeeadd;       /* Soft oat color for the apps, NO pure white! */
+      --card-hover: #f5f2e8; /* Slight brighten on hover */
+      --border: rgba(140, 122, 107, 0.18);
+      --border-subtle: rgba(140, 122, 107, 0.08);
+      --accent: #b08968;     /* Rich warm caramel */
+      --accent2: #9c7153;
+      --text: #3d342b;       /* Soft espresso text instead of harsh black */
+      --text-dim: #6b5c51;
+      --text-muted: #9c8e82;
+    }
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   OCEAN — Deep sea with glowing cyan accents
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+[data-theme="ocean"] {
+  --bg: #0b1a2a;
+  --surface: #112336;
+  --card: #1a2e45;
+  --card-hover: #223b56;
+  --border: rgba(74, 163, 255, 0.2);
+  --border-subtle: rgba(74, 163, 255, 0.08);
+  --accent: #4aa3ff;
+  --accent2: #36d0e0;
+  --text: #e4f0ff;
+  --text-dim: #99c1ff;
+  --text-muted: #4c6a8f;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SUNSET — Warm dusk with coral and gold
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+[data-theme="sunset"] {
+  --bg: #2b1b1e;
+  --surface: #39262a;
+  --card: #4d3238;
+  --card-hover: #643f47;
+  --border: rgba(255, 123, 92, 0.2);
+  --border-subtle: rgba(255, 123, 92, 0.08);
+  --accent: #ff7b5c;
+  --accent2: #fdb35c;
+  --text: #fff0e6;
+  --text-dim: #ffb59e;
+  --text-muted: #a3685a;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ESPRESSO — Deep roasted coffee with warm gold
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+[data-theme="espresso"] {
+  --bg: #1a1412;           /* Rich dark brown background */
+  --surface: #241e1b;      /* Slightly lighter for surfaces */
+  --card: #302924;         /* Warm card background */
+  --card-hover: #3d3530;   /* Hover state */
+  --border: rgba(230, 180, 120, 0.2);
+  --border-subtle: rgba(230, 180, 120, 0.08);
+  --accent: #e6b478;       /* Warm gold / caramel */
+  --accent2: #c29a6b;      /* Deeper caramel */
+  --text: #f5ede4;         /* Creamy off-white */
+  --text-dim: #cbb59e;     /* Soft beige */
+  --text-muted: #8b7a6b;   /* Muted taupe */
+}
 
     html, body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
     body::before {
@@ -477,6 +594,70 @@
       padding: 6px 12px; border-radius: 8px; transition: color .15s;
     }
     .scope-cancel:hover { color: var(--text); }
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ✨ FLUID ANIMATIONS & GLASSMORPHISM OVERHAUL (FIXED)
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /* 1. Page & Grid Entrance Animation */
+    @keyframes smoothFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Apply the animation to your main grid and detail views */
+    .grid, .detail-wrap, .searchbar-wrap {
+      animation: smoothFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* 2. Transparent "Glass" App Cards */
+    /* 👇 CHANGED .card to .app-card here 👇 */
+    .app-card {
+      /* This makes your theme color 65% transparent automatically! */
+      background: color-mix(in srgb, var(--card) 65%, transparent) !important;
+
+      /* The magic blur effect behind the card */
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+
+      border: 1px solid var(--border-subtle) !important;
+
+      /* Super smooth transition for hovering */
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      transform: translateY(0) scale(1);
+    }
+
+    /* 3. Card Hover 'Pop' Effect */
+    /* 👇 CHANGED .card:hover to .app-card:hover here 👇 */
+    .app-card:hover {
+      background: color-mix(in srgb, var(--card-hover) 85%, transparent) !important;
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.1);
+      border-color: var(--accent) !important;
+    }
+
+    /* 4. Sidebar Hover Animations */
+    /* 👇 CHANGED .nav-item to .nav-btn here 👇 */
+    .nav-btn {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    .nav-btn:hover {
+      transform: translateX(6px); /* Slides the button slightly right on hover */
+      background: color-mix(in srgb, var(--accent) 15%, transparent) !important;
+    }
+
+    /* 5. App Icon Image Hover Polish */
+    .card-icon {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .app-card:hover .card-icon {
+      transform: scale(1.08) rotate(-2deg);
+    }
   </style>
 </head>
 <body>

@@ -1,11 +1,11 @@
 {
   "name": "servhub",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "ServHub — Linux App Store",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build-linux": "electron-builder --linux deb AppImage"
+    "build-linux": "electron-builder --linux AppImage deb"
   },
   "build": {
     "appId": "net.servexa.servhub",
@@ -21,19 +21,11 @@
     "linux": {
       "category": "System",
       "description": "ServHub — Linux App Store",
-      "target": [
-        "deb",
-        "AppImage"
-      ],
+      "target": ["AppImage", "deb"],
       "maintainer": "Abdulrahman AlAli (B5aaR)"
     },
     "deb": {
-      "depends": [
-        "flatpak",
-        "libnss3",
-        "libatk1.0-0",
-        "libasound2"
-      ],
+      "depends": ["flatpak", "libnss3", "libatk1.0-0", "libasound2"],
       "priority": "optional"
     }
   },
